@@ -1,0 +1,24 @@
+1. this is question #1
+	A.  dummy1.3
+	B.  dummy1.2
+	C.  correct answer #1
+	D.  dummy1.1
+
+2. question#2
+	A.  dummy2.1
+	B.  dummy2.3
+	C.  correct answer #2
+	D.  dummy2.2
+
+3. the third question
+	A.  dummy3.2
+	B.  dummy3.1
+	C.  correct #3
+	D.  dummy3.3
+
+4. the fourth question
+	A.  correct #4
+	B.  dummy4.2
+	C.  another correct #4
+	D.  dummy4.1
+
