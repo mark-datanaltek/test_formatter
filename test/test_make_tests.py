@@ -1,7 +1,8 @@
 import unittest
 
 from make_tests import read_input_test, \
-                       create_test_versions
+                       create_test_versions, \
+                       create_version_code_str
 
 class Test_Make_Tests(unittest.TestCase):
 
@@ -70,6 +71,27 @@ class Test_Make_Tests(unittest.TestCase):
     def test_two_versions(self):
         num_test_versions = 2
         self.run_versions_test(num_test_versions)
+
+class Test_Make_Version_Codes(unittest.TestCase):
+    def setUp(self):
+        input_test_filename = "test_in.txt"
+        input_test_questions = read_input_test(input_test_filename)
+        num_test_versions = 2
+        self.test_versions = create_test_versions(input_test_questions, num_test_versions)
+
+    def test_two_version_codes(self):
+        CHAR_OFFSET_FROM_END = 6
+
+        for version_indx, version in enumerate(self.test_versions):
+            code_str= create_version_code_str(version_indx)
+            expected_version_char = chr(ord('a') + version_indx)
+            found_version_char = code_str[len(code_str) - CHAR_OFFSET_FROM_END]
+            self.assertEqual(expected_version_char, found_version_char,
+                             "did not find expected version char: " + expected_version_char + '\n' +
+                             "found version char: " + found_version_char + '\n' +
+                             "in version string: " + code_str)
+
+
 
 
 if __name__ == '__main__':
