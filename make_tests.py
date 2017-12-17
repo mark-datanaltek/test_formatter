@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
-from random import shuffle
+from random import choice as random_choice
+from random import shuffle as random_shuffle
+
 
 def read_input_test(input_test_filename):
     """
@@ -42,38 +44,105 @@ def read_input_test(input_test_filename):
             questions.append(question)
     return questions
 
-def create_test_version(test_questions):
+
+def get_test_question_shuffled(test_question):
     """
-    param: test_questions object (see above)
-    returns: test_questions_suffled: [question1, question2, ... ] where
+    randomly shuffles the answers for a test question
+    :param test_question:
+    :return: test_question_shuffled where
+             question = {question: "what?",
+                          correct_answer_letters: ['A', ...] # may be only one
+                          answers_shuffled: ["no", "maybe", "never", ...]
+
+    """
+    answers = test_question["correct_answers"] + test_question["dummy_answers"]
+    answer_indices = range(len(answers))
+
+    # shuffle the indices to the answers
+    random_shuffle(answer_indices)
+
+    # make the randomized list of answers
+    answers_shuffled = [answers[indx] for indx in answer_indices]
+
+    # get the answer_letter for the correct answers
+    correct_answer_letters = [chr(ord('A') + answer_indices.index(letter_num))
+                              for letter_num in range(len(test_question["correct_answers"]))]
+
+    test_question_shuffled = {"question": test_question["question"],
+                              "correct_answer_letters": correct_answer_letters,
+                              "answers_shuffled": answers_shuffled}
+
+    return test_question_shuffled
+
+
+def create_test_versions(test_questions, num_test_versions):
+    """
+    creates test_versions and ensures that correct_answer_letters for any question
+    are different between test_versions (for single answer questions).
+    :param test_questions: object (see above)
+    :param num_test_versions:
+    :return: [test_version1, test_version2, ...] where each test_version is a list of questions
+             [question1, question2, ... ] where
              questionN = {question: "what?",
-                          correct_answer_letter: 'A',
+                          correct_answer_letters: ['A', ...] # may be only one
                           answers_shuffled: ["no", "maybe", "never", ...]
     """
 
-    test_questions_shuffled = []
+    # approach is to loop over questions and create versions of each question in the
+    # question loop.  This allows the version answers to be aware of each other.
+    test_versions = [[] for i in range(num_test_versions)]
     for test_question in test_questions:
+        # if there is only one correct answer we will make sure each
+        # version has a different correct answer letter.  If there are
+        # more than one correct answer, then we simply shuffle them for
+        # each version.
+        if len(test_question["correct_answers"]) < 1:
+            err_msg = "less than one correct answer in question:\n" + str(test_question)
+            raise Exception(err_msg)
 
-        # put all the correct and incorrect answers into one list
-        answers = test_question["correct_answers"] + test_question["dummy_answers"]
+        elif len(test_question["correct_answers"]) == 1:
+            # for first version simply shuffle to get random order
+            test_question_shuffled_v1 = get_test_question_shuffled(test_question)
+            test_versions[0].append(test_question_shuffled_v1)
 
-        # shuffle the indicies to the answers
-        answer_indices = range(len(answers))
-        shuffle(answer_indices)
+            # for the remaining versions set the correct answer letter to be
+            # something other than what it is in the previous versions
+            correct_answer_indx_v1 = ord(test_question_shuffled_v1["correct_answer_letters"][0]) - \
+                                  ord('A')
+            correct_answer_indices = range(len(test_question_shuffled_v1["answers_shuffled"]))
 
-        # get the answer_letter for the correct answers
-        correct_answer_letters = [chr(ord('A') + answer_indices.index(letter_num))
-                                  for letter_num in range(len(test_question["correct_answers"]))]
+            correct_answer_indices_remaining = list(correct_answer_indices)
+            correct_answer_indices_remaining.remove(correct_answer_indx_v1)
 
-        # make the randomized list of answers
-        answers_shuffled = [answers[indx] for indx in answer_indices]
+            for test_version_indx in range(1, num_test_versions):
+                # get a new random correct answer index from those that have not been used
+                correct_answer_indx = random_choice(correct_answer_indices_remaining)
 
-        test_question_shuffled = {"question": test_question["question"],
-                                  "correct_answer_letters": correct_answer_letters,
-                                  "answers_shuffled": answers_shuffled}
-        test_questions_shuffled.append(test_question_shuffled)
+                # remove the latest correct answer indx from the remaining list
+                if len(correct_answer_indices_remaining) < 1:
+                    err_msg = "trying to remove a correct answer indx from an empty list :("
+                    raise Exception(err_msg)
+                correct_answer_indices_remaining.remove(correct_answer_indx)
 
-    return test_questions_shuffled
+                # now create the test_version question object by swapping the positions
+                # of the new and original correct answers
+                correct_answer_letter = chr(ord('A') + correct_answer_indx)
+                answers_shuffled = list(test_question_shuffled_v1["answers_shuffled"])
+                answers_shuffled[correct_answer_indx], answers_shuffled[correct_answer_indx_v1] = \
+                    answers_shuffled[correct_answer_indx_v1], answers_shuffled[correct_answer_indx]
+                test_question_shuffled = {"question": test_question_shuffled_v1["question"],
+                                          "correct_answer_letters": [correct_answer_letter],
+                                          "answers_shuffled": answers_shuffled}
+                test_versions[test_version_indx].append(test_question_shuffled)
+
+        else: # >1 correct answer to this test question
+            # so we just shuffle
+            for test_version_indx in range(num_test_versions):
+                test_question_shuffled = get_test_question_shuffled(test_question)
+                test_versions[test_version_indx].append(test_question_shuffled)
+
+    return test_versions
+
 
 def get_test_version_str(test_version):
     test_version_str = ""
@@ -86,6 +155,7 @@ def get_test_version_str(test_version):
 
     return test_version_str
 
+
 def get_test_version_key_str(test_version):
     test_version_key_str = ""
     for (question_num, test_question) in enumerate(test_version):
@@ -94,18 +164,22 @@ def get_test_version_key_str(test_version):
 
     return test_version_key_str
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input_test_filename")
-    parser.add_argument("--num_output_test_versions", default=2)
+    parser.add_argument("--num_output_test_versions", default=2, type=int)
     args = parser.parse_args()
 
     test_questions = read_input_test(args.input_test_filename)
 
-    for test_num in range(1, args.num_output_test_versions+1):
+    test_versions = create_test_versions(test_questions, args.num_output_test_versions)
+
+    for test_version_indx in range(len(test_versions)):
+        test_num = test_version_indx + 1
         test_version_label = "Test Version " + str(test_num)
         print test_version_label + " of " + str(args.num_output_test_versions) + '\n'
-        test_version = create_test_version(test_questions)
+        test_version = test_versions[test_version_indx]
 
         with open("version" + str(test_num) + "_" + args.input_test_filename, 'w') as test_version_fobj:
             test_version_str = get_test_version_str(test_version)
