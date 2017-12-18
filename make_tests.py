@@ -162,10 +162,16 @@ def get_test_version_str(test_version, test_version_indx):
     :param test_version_indx:
     :return: test_version_str
     """
-    version_code_str = create_version_code_str(test_version_indx)
-    QUESTION_NUM_FOR_CODE = 1
+    version_code_str = '\n' + create_version_code_str(test_version_indx)
+    QUESTION_NUM_FOR_CODE = len(test_version)
 
-    test_version_str = ""
+    test_version_hdr_str = \
+"""Name (please write clearly, Last, First): ___________________________________
+   Please fill in the bubble corresponding to the best answer and mark only one answer for each question,
+   unless noted "select all that apply". Only the Scantron (answer) sheet will be graded.
+   
+"""
+    test_version_str = test_version_hdr_str
     for (question_indx, test_question) in enumerate(test_version):
         question_num = question_indx + 1
         test_version_str += str(question_num) + ". " + test_question["question"] + '\n'
