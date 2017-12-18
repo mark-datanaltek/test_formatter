@@ -84,7 +84,7 @@ class Test_Make_Version_Codes(unittest.TestCase):
 
         for version_indx, version in enumerate(self.test_versions):
             code_str= create_version_code_str(version_indx)
-            expected_version_char = chr(ord('a') + version_indx)
+            expected_version_char = chr(ord('A') + version_indx)
             found_version_char = code_str[len(code_str) - CHAR_OFFSET_FROM_END]
             self.assertEqual(expected_version_char, found_version_char,
                              "did not find expected version char: " + expected_version_char + '\n' +

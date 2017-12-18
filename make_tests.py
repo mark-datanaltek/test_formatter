@@ -32,7 +32,8 @@ def read_input_test(input_test_filename):
             if len(fields) < LINE_NUM_FIELDS_MIN:
                 err_msg = "line:\n" + line + " has less than " + str(LINE_NUM_FIELDS_MIN) + " fields"
                 err_msg += "\nfields found are: " + str(fields)
-                raise(err_msg)
+                err_msg += "skipping this line ..."
+                print err_msg
             else:
                 question = fields[COL_NUM_QUESTION]
                 num_correct_answers = int(fields[COL_NUM_NUM_CORRECT_ANSWERS])
@@ -149,20 +150,28 @@ def create_version_code_str(test_version_indx):
     LEN_VERSION_CODE_STR = 20
     CHAR_OFFSET_FROM_END = 6
     version_char_list = [chr(random_randint(ord('!'), ord('`'))) for i in range(LEN_VERSION_CODE_STR)]
-    version_char = chr(ord('a') + test_version_indx)
+
+    # make sure there are no 'a', 'b', 'A', 'B' chars in version_char_list
+    # if there are, replace them with a random char in the range [C, Z]
+    for indx in range(len(version_char_list)):
+        if version_char_list[indx] in ['a', 'b', 'A', 'B']:
+            version_char_list[indx] = chr(random_randint(ord('C'), ord('Z')))
+
+    version_char = chr(ord('A') + test_version_indx)
     version_char_list[LEN_VERSION_CODE_STR - CHAR_OFFSET_FROM_END] = version_char
     version_code_str = ''.join(version_char_list)
 
     return version_code_str
 
-def get_test_version_str(test_version, test_version_indx):
+
+def get_test_version_str(test_version, test_version_indx, hdr_line1_str):
     """
     creates test version that is ready to be printed with an embedded version string.
     :param test_version:
     :param test_version_indx:
     :return: test_version_str
     """
-    version_code_str = '\n' + create_version_code_str(test_version_indx)
+    version_code_str = create_version_code_str(test_version_indx)
     QUESTION_NUM_FOR_CODE = len(test_version)
 
     test_version_hdr_str = \
@@ -171,7 +180,7 @@ def get_test_version_str(test_version, test_version_indx):
    unless noted "select all that apply". Only the Scantron (answer) sheet will be graded.
    
 """
-    test_version_str = test_version_hdr_str
+    test_version_str = hdr_line1_str + '\n' + test_version_hdr_str
     for (question_indx, test_question) in enumerate(test_version):
         question_num = question_indx + 1
         test_version_str += str(question_num) + ". " + test_question["question"] + '\n'
@@ -199,6 +208,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input_test_filename")
     parser.add_argument("--num_output_test_versions", default=2, type=int)
+    parser.add_argument("--hdr_line1_str", default="NU220")
     args = parser.parse_args()
 
     test_questions = read_input_test(args.input_test_filename)
@@ -212,7 +222,9 @@ if __name__ == "__main__":
         test_version = test_versions[test_version_indx]
 
         with open("version" + str(test_num) + "_" + args.input_test_filename, 'w') as test_version_fobj:
-            test_version_str = get_test_version_str(test_version, test_version_indx)
+            test_version_str = get_test_version_str(test_version,
+                                                    test_version_indx,
+                                                    args.hdr_line1_str)
             test_version_fobj.write(test_version_str)
 
         with open("key_version" + str(test_num) + "_" + args.input_test_filename, 'w') as test_version_key_fobj:
