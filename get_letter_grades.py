@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from functools import partial
 import pandas as pd
 
@@ -15,12 +17,11 @@ def get_categories(categories_file):
 
 def get_num_grades(num_grades_file):
   # expect header of lastname, firstname, course-num-grade
-  num_grades = pd.read_csv(num_grades_file, sep='\t')
+  num_grades = pd.read_csv(num_grades_file, sep='\t', skip_blank_lines=True)
   return num_grades
 
 def categorize(row, categories):
-  result = categories[(categories["min"] <= row["course-num-grade"]) &
-                    (row["course-num-grade"] < categories["max"])]["letter-grade"].values[0]
+  result = categories[(categories["min"] <= row["course-num-grade"]) & (row["course-num-grade"] < categories["max"])]["letter-grade"].values[0]
   return result
 
 def get_letter_grades(num_grades, categories):
@@ -32,10 +33,11 @@ def get_letter_grades(num_grades, categories):
 if __name__ == "__main__":
   import argparse
 
-  parser = argparse.ArgumentParser(description="get letter grades for numerical grades")
-  parser.add_argument("--categories", "-c", default="grade_categories.txt")
-  parser.add_argument("--num_grades", "-n", default="num_grades.txt")
-  parser.add_argument("--categorized_grades", "-g", default="categorized_grades.txt")
+  parser = argparse.ArgumentParser(description="get letter grades for numerical grades",
+          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument("--categories", "-c", default="grade_categories.txt", help="grade_categories file")
+  parser.add_argument("--num_grades", "-n", default="num_grades.txt", help="number grades file")
+  parser.add_argument("--categorized_grades", "-g", default="categorized_grades.txt", help="output categorized grades file")
   args = parser.parse_args()
 
   categories = get_categories(args.categories)
